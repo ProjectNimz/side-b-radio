@@ -12,7 +12,10 @@
 }
 
 * { box-sizing: border-box; }
-html { scroll-behavior: smooth; }
+html {
+  scroll-behavior: smooth;
+  -webkit-text-size-adjust: 100%;
+}
 
 body {
   margin: 0;
@@ -24,6 +27,7 @@ body {
     var(--bg);
   background-size: auto, 24px 24px, 24px 24px, auto;
   font-family: 'IBM Plex Sans', sans-serif;
+  overflow-x: hidden;
 }
 
 body::before {
@@ -174,6 +178,8 @@ a { color: inherit; }
   font-size: 0.96rem;
   color: var(--paper);
   font-weight: 600;
+  min-width: 0;
+  overflow-wrap: anywhere;
 }
 
 .transmission-meta {
@@ -215,6 +221,7 @@ a { color: inherit; }
 .brand-panel, .hero-collage, .player-slab, .feature-card, .news-card, .release-tile {
   background: var(--panel-alt);
   border: 1px solid var(--line);
+  min-width: 0;
 }
 
 .brand-panel {
@@ -223,6 +230,16 @@ a { color: inherit; }
   padding: 20px;
   align-content: start;
   min-height: 100%;
+}
+
+.brand-mobile-logo {
+  display: none;
+}
+
+.brand-mobile-logo img {
+  width: min(82vw, 320px);
+  height: auto;
+  margin: 0 auto;
 }
 
 .brand-bottom {
@@ -274,12 +291,14 @@ a { color: inherit; }
   color: var(--paper);
   font-size: 0.94rem;
   line-height: 1.35;
+  overflow-wrap: anywhere;
 }
 
 .recently-played-artist {
   color: var(--muted);
   font-size: 0.82rem;
   line-height: 1.4;
+  overflow-wrap: anywhere;
 }
 
 .tape {
@@ -643,6 +662,15 @@ a { color: inherit; }
   object-fit: cover;
 }
 
+.local-scene-media .feed-fallback-image {
+  object-fit: contain;
+  padding: 16px;
+  background:
+    radial-gradient(circle at center, rgba(255,255,255,0.03), rgba(255,255,255,0) 58%),
+    transparent;
+  filter: drop-shadow(0 16px 28px rgba(0, 0, 0, 0.28));
+}
+
 .local-scene-media-placeholder {
   background:
     linear-gradient(135deg, rgba(43,121,227,0.18), transparent 48%),
@@ -672,6 +700,7 @@ a { color: inherit; }
   font-size: clamp(1.35rem, 2.3vw, 1.9rem);
   line-height: 1;
   letter-spacing: 0.02em;
+  overflow-wrap: anywhere;
 }
 
 .local-scene-copy p {
@@ -806,6 +835,10 @@ a { color: inherit; }
   .transmission-strip {
     align-items: flex-start;
   }
+
+  .logo-card {
+    min-height: 400px;
+  }
 }
 
 @media (max-width: 640px) {
@@ -818,8 +851,87 @@ a { color: inherit; }
     margin-top: 10px;
   }
 
-  .brand-stack h1 { font-size: 3.8rem; }
-  .logo-card { min-height: 300px; }
+  .masthead {
+    padding: 12px;
+  }
+
+  .masthead-rail {
+    gap: 8px;
+    padding-bottom: 8px;
+  }
+
+  .rail-copy {
+    font-size: 0.76rem;
+  }
+
+  .transmission-strip {
+    margin-top: 10px;
+    padding: 12px;
+  }
+
+  .transmission-status {
+    width: 100%;
+    align-items: flex-start;
+    gap: 10px;
+  }
+
+  .live-pill {
+    min-height: 40px;
+    padding: 0 14px;
+  }
+
+  .transmission-status strong {
+    font-size: 0.9rem;
+    line-height: 1.35;
+  }
+
+  .hero-layout {
+    margin-top: 12px;
+    gap: 12px;
+  }
+
+  .brand-panel {
+    padding: 16px;
+    gap: 14px;
+  }
+
+  .brand-mobile-logo {
+    display: block;
+    margin-bottom: 14px;
+  }
+
+  .brand-panel > .tape-orange,
+  .brand-stack,
+  .sticker-row {
+    display: none;
+  }
+
+  .hero-collage {
+    display: none;
+  }
+
+  .recent-footer {
+    gap: 8px;
+  }
+
+  .recently-played-item {
+    grid-template-columns: 54px minmax(0, 1fr);
+    gap: 4px 10px;
+    padding: 9px 0;
+  }
+
+  .recently-played-kicker {
+    font-size: 0.63rem;
+  }
+
+  .recently-played-title {
+    font-size: 0.88rem;
+  }
+
+  .recently-played-artist {
+    font-size: 0.78rem;
+  }
+
   .local-scene-grid { gap: 10px; }
   .local-scene-media { min-height: 148px; }
   .local-scene-copy {
@@ -837,6 +949,21 @@ a { color: inherit; }
   .text-link {
     font-size: 0.84rem;
   }
+
+  .module {
+    padding: 14px;
+  }
+
+  .module-head {
+    gap: 6px;
+    margin-bottom: 12px;
+  }
+
+  .module-head h2 {
+    font-size: clamp(1.75rem, 12vw, 2.4rem);
+    line-height: 0.95;
+  }
+
   .deck-visual { min-height: 290px; }
   .arm { width: 128px; right: 42px; top: 62px; }
   .arm-base { right: 34px; top: 54px; }
@@ -848,5 +975,10 @@ a { color: inherit; }
   .deck-nowplaying img {
     width: 78px;
     height: 78px;
+  }
+
+  .footer-bar {
+    padding: 14px;
+    gap: 10px;
   }
 }

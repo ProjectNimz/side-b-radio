@@ -1,6 +1,8 @@
 const STREAM_URL = "https://stream.manilasoundradio.com/listen/manila-sound-radio/radio.mp3";
 const NOW_PLAYING_URL = "/.netlify/functions/sideb-now-playing";
 const NOW_PLAYING_REFRESH_MS = 30000;
+const LOCAL_FEED_FALLBACK_IMAGE = "https://images.pexels.com/photos/36422833/pexels-photo-36422833.jpeg?auto=compress&cs=tinysrgb&w=1200";
+const INTERNATIONAL_FEED_FALLBACK_IMAGE = "https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?auto=format&fit=crop&w=1200&q=80";
 
 const audio = document.getElementById("streamAudio");
 const playToggle = document.getElementById("transmissionToggle");
@@ -86,18 +88,19 @@ function normalizeRecentTracks(payload) {
 }
 
 function renderLocalScene(items) {
-  renderEditorialScene(localSceneGrid, items);
+  renderEditorialScene(localSceneGrid, items, LOCAL_FEED_FALLBACK_IMAGE);
 }
 
-function renderEditorialScene(container, items) {
+function renderEditorialScene(container, items, fallbackImage) {
   if (!container) return;
 
   container.innerHTML = items.slice(0, 3).map((item) => `
     <article class="local-scene-card">
       <div class="local-scene-media ${item.image ? "" : "local-scene-media-placeholder"}">
-        ${item.image
-          ? `<img src="${escapeHtml(item.image)}" alt="${escapeHtml(item.title)}">`
-          : ""}
+        <img
+          src="${escapeHtml(item.image || fallbackImage)}"
+          alt="${escapeHtml(item.title)}"
+          class="${item.image ? "" : "feed-fallback-image"}">
       </div>
       <div class="local-scene-copy">
         <h3>${escapeHtml(item.title)}</h3>
@@ -125,11 +128,11 @@ function renderLocalSceneFallback() {
       text: "This card is reserved for another underground feed so the board stays balanced even before the live pull hits.",
       url: "https://news.google.com/search?q=OPM%20rap"
     }
-  ]);
+  ], LOCAL_FEED_FALLBACK_IMAGE);
 }
 
 function renderInternationalScene(items) {
-  renderEditorialScene(internationalSceneGrid, items);
+  renderEditorialScene(internationalSceneGrid, items, INTERNATIONAL_FEED_FALLBACK_IMAGE);
 }
 
 function renderInternationalFallback() {
@@ -149,15 +152,20 @@ function renderInternationalFallback() {
       text: "The international row stays balanced with three editorial cards even before the live pull fills out.",
       url: "https://news.google.com/search?q=indie%20rap"
     }
-  ]);
+  ], INTERNATIONAL_FEED_FALLBACK_IMAGE);
 }
 
-function renderEditorialFallback(container, items) {
+function renderEditorialFallback(container, items, fallbackImage) {
   if (!container) return;
 
   container.innerHTML = items.map((item) => `
     <article class="local-scene-card">
-      <div class="local-scene-media local-scene-media-placeholder"></div>
+      <div class="local-scene-media local-scene-media-placeholder">
+        <img
+          src="${escapeHtml(fallbackImage)}"
+          alt="${escapeHtml(item.title)}"
+          class="feed-fallback-image">
+      </div>
       <div class="local-scene-copy">
         <h3>${escapeHtml(item.title)}</h3>
         <p>${escapeHtml(item.text)}</p>
