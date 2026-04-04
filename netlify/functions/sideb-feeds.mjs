@@ -2,19 +2,19 @@ const RSS_TO_JSON = "https://api.rss2json.com/v1/api.json?rss_url=";
 
 const LOCAL_SCENE_FEEDS = [
   {
-    label: "pinoy rap wire",
-    sourceUrl: "https://news.google.com/",
-    feedUrl: "https://news.google.com/rss/search?q=%22Pinoy+rap%22+OR+%22Pinoy+hip-hop%22"
+    label: "rolling stone ph",
+    sourceUrl: "https://rollingstonephilippines.com/music/hiphop-rnb/",
+    feedUrl: "https://news.google.com/rss/search?q=site:rollingstonephilippines.com%20(%22hip-hop%22%20OR%20rap%20OR%20rapper)"
   },
   {
-    label: "filipino hip-hop",
-    sourceUrl: "https://news.google.com/",
-    feedUrl: "https://news.google.com/rss/search?q=%22Filipino+hip-hop%22+OR+%22Philippine+hip-hop%22"
+    label: "billboard ph",
+    sourceUrl: "https://billboardphilippines.com/",
+    feedUrl: "https://news.google.com/rss/search?q=site:billboardphilippines.com%20(%22pinoy%20hip-hop%22%20OR%20%22filipino%20rap%22%20OR%20rapper)"
   },
   {
-    label: "opm rap",
-    sourceUrl: "https://news.google.com/",
-    feedUrl: "https://news.google.com/rss/search?q=%22OPM+rap%22+OR+%22Filipino+rap%22"
+    label: "bandwagon",
+    sourceUrl: "https://www.bandwagon.asia/",
+    feedUrl: "https://news.google.com/rss/search?q=site:bandwagon.asia%20(%22filipino%20rap%22%20OR%20%22pinoy%20rap%22%20OR%20%22hip-hop%22)"
   }
 ];
 
@@ -48,6 +48,66 @@ function stripHtml(text) {
   return String(text).replace(/<[^>]*>/g, " ");
 }
 
+function normalizeWhitespace(text) {
+  return String(text).replace(/\s+/g, " ").trim();
+}
+
+function cleanTitle(text) {
+  return normalizeWhitespace(String(text)
+    .replace(/\s+[|\-–—]\s+(Rolling Stone Philippines|Billboard Philippines|Bandwagon|Okayplayer|UndergroundHipHopBlog(?:\.com)?|Bandcamp Daily)$/i, "")
+    .replace(/\s+[|\-–—]\s+Google News$/i, ""));
+}
+
+function isMostlyLatin(text) {
+  const sample = normalizeWhitespace(text);
+  if (!sample) {
+    return false;
+  }
+
+  let latinLike = 0;
+  for (const char of sample) {
+    if (/[\u0000-\u024F]/.test(char)) {
+      latinLike += 1;
+    }
+  }
+
+  return latinLike / sample.length >= 0.85;
+}
+
+function hasBlockedTerms(text) {
+  const sample = normalizeWhitespace(text).toLowerCase();
+  const blocked = [
+    "ministry of foreign affairs",
+    "republic of belarus",
+    "министерство",
+    "республики",
+    "spotify hits philippines linked internet page",
+    "linked internet page"
+  ];
+
+  return blocked.some((term) => sample.includes(term));
+}
+
+function isUsableItem(item) {
+  const title = cleanTitle(item?.title ?? "");
+  const summary = normalizeWhitespace(stripHtml(item?.description ?? item?.content ?? ""));
+  const combined = `${title} ${summary}`;
+
+  if (!title) {
+    return false;
+  }
+
+  if (!isMostlyLatin(combined)) {
+    return false;
+  }
+
+  if (hasBlockedTerms(combined)) {
+    return false;
+  }
+
+  return true;
+}
+
 function extractImage(item) {
   const thumbnail = item?.thumbnail;
   if (typeof thumbnail === "string" && thumbnail.trim()) {
@@ -75,13 +135,16 @@ async function fetchFeed(feed, maxItemsPerFeed = 1) {
     throw new Error("Feed payload was not usable.");
   }
 
-  return payload.items.slice(0, maxItemsPerFeed).map((item) => ({
-    label: feed.label,
-    title: item?.title ?? `Open ${feed.label}`,
-    summary: trimText(stripHtml(item?.description ?? item?.content ?? "No summary available.")),
-    link: item?.link ?? feed.sourceUrl,
-    image: extractImage(item)
-  }));
+  return payload.items
+    .filter(isUsableItem)
+    .slice(0, maxItemsPerFeed)
+    .map((item) => ({
+      label: feed.label,
+      title: cleanTitle(item?.title ?? `Open ${feed.label}`),
+      summary: trimText(stripHtml(item?.description ?? item?.content ?? "No summary available.")),
+      link: item?.link ?? feed.sourceUrl,
+      image: extractImage(item)
+    }));
 }
 
 async function collect(feeds, { maxItems = feeds.length, maxItemsPerFeed = 1 } = {}) {
