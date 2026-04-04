@@ -105,7 +105,7 @@ function renderEditorialScene(container, items, fallbackImage) {
       <div class="local-scene-copy">
         <h3>${escapeHtml(item.title)}</h3>
         <p>${escapeHtml(item.summary)}</p>
-        <a href="${escapeHtml(item.link)}" class="text-link" target="_blank" rel="noopener noreferrer">Open story</a>
+        <a href="${escapeHtml(item.link)}" class="text-link" target="_blank" rel="noopener noreferrer">Read more</a>
       </div>
     </article>
   `).join("");
@@ -169,7 +169,7 @@ function renderEditorialFallback(container, items, fallbackImage) {
       <div class="local-scene-copy">
         <h3>${escapeHtml(item.title)}</h3>
         <p>${escapeHtml(item.text)}</p>
-        <a href="${escapeHtml(item.url)}" class="text-link" target="_blank" rel="noopener noreferrer">Open source</a>
+        <a href="${escapeHtml(item.url)}" class="text-link" target="_blank" rel="noopener noreferrer">Read more</a>
       </div>
     </article>
   `).join("");

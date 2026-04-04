@@ -644,11 +644,13 @@ a { color: inherit; }
   background: var(--panel-alt);
   border: 1px solid var(--line);
   display: grid;
+  grid-template-rows: 220px minmax(0, 1fr);
   overflow: hidden;
 }
 
 .local-scene-media {
-  min-height: 220px;
+  height: 220px;
+  padding: 16px 16px 0;
   background:
     linear-gradient(135deg, rgba(43,121,227,0.12), transparent 48%),
     radial-gradient(circle at bottom left, rgba(217,59,46,0.12), transparent 32%),
@@ -659,12 +661,13 @@ a { color: inherit; }
 .local-scene-media img {
   width: 100%;
   height: 100%;
-  object-fit: cover;
+  object-fit: contain;
+  object-position: center;
 }
 
 .local-scene-media .feed-fallback-image {
-  object-fit: contain;
-  padding: 16px;
+  object-fit: cover;
+  padding: 0;
   background:
     radial-gradient(circle at center, rgba(255,255,255,0.03), rgba(255,255,255,0) 58%),
     transparent;
@@ -681,6 +684,7 @@ a { color: inherit; }
 
 .local-scene-copy {
   display: grid;
+  grid-template-rows: auto auto 1fr auto;
   gap: 10px;
   padding: 16px;
   align-content: start;
@@ -701,6 +705,7 @@ a { color: inherit; }
   line-height: 1;
   letter-spacing: 0.02em;
   overflow-wrap: anywhere;
+  text-wrap: balance;
 }
 
 .local-scene-copy p {
@@ -708,6 +713,11 @@ a { color: inherit; }
   color: var(--muted);
   line-height: 1.6;
   font-size: 0.92rem;
+}
+
+.local-scene-copy .text-link {
+  align-self: end;
+  justify-self: start;
 }
 
 .signal-feed-empty {
@@ -933,7 +943,13 @@ a { color: inherit; }
   }
 
   .local-scene-grid { gap: 10px; }
-  .local-scene-media { min-height: 148px; }
+  .local-scene-card {
+    grid-template-rows: 148px minmax(0, 1fr);
+  }
+  .local-scene-media {
+    height: 148px;
+    padding: 12px 12px 0;
+  }
   .local-scene-copy {
     gap: 8px;
     padding: 12px;
