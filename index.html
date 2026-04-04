@@ -1,0 +1,112 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Side B Radio | Underground Hip-Hop Signal</title>
+  <meta name="description" content="Side B Radio is a gritty one-page underground hip-hop station site with a spinning vinyl player, feature artist slot, hip-hop news, and release drops.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div class="noise"></div>
+
+  <header class="masthead" id="top">
+    <div class="masthead-rail">
+      <span class="rail-tag">SIDE B SIGNAL</span>
+      <span class="rail-dot"></span>
+      <span class="rail-copy">indie / underground / pinoy rap transmission</span>
+    </div>
+
+    <section class="transmission-strip panel-skin" aria-label="Broadcast status">
+      <div class="transmission-status">
+        <button id="transmissionToggle" class="live-pill" type="button">
+          <span class="live-icon" aria-hidden="true">▶</span>
+          <span class="live-label">play transmission</span>
+        </button>
+        <strong id="transmissionLine">Loading artist | track...</strong>
+      </div>
+    </section>
+
+    <div class="hero-layout">
+      <section class="brand-panel panel-skin">
+        <span class="tape tape-orange">broadcasting from the other side</span>
+        <div class="brand-stack">
+          <h1>SIDE B<br>RADIO</h1>
+          <p class="brand-summary">Underground rotation for indie rap, Pinoy cuts, and records that hit harder after dark.</p>
+        </div>
+
+        <div class="brand-bottom">
+          <div class="sticker-row">
+            <span class="sticker">deep cuts</span>
+            <span class="sticker">raw feed</span>
+            <span class="sticker">city static</span>
+          </div>
+
+          <section class="recent-footer" aria-labelledby="recentFooterTitle">
+            <span class="tape tape-orange recent-footer-label" id="recentFooterTitle">recently played</span>
+            <div id="recentlyPlayedList" class="recently-played-list" aria-live="polite">
+              <p class="signal-feed-empty">Waiting on the latest cuts from the live signal.</p>
+            </div>
+          </section>
+        </div>
+      </section>
+
+      <section class="hero-collage panel-skin">
+        <div class="logo-card">
+          <img src="images/side-b-official-logo.png" alt="Side B Radio official logo">
+        </div>
+      </section>
+    </div>
+  </header>
+
+  <main class="board">
+    <section class="program-module module panel-skin" id="programming">
+      <div class="module-head">
+        <h2>Local Scene</h2>
+      </div>
+
+      <div id="localSceneGrid" class="local-scene-grid" aria-live="polite">
+        <article class="local-scene-card">
+          <div class="local-scene-media local-scene-media-placeholder"></div>
+          <div class="local-scene-copy">
+            <span class="local-scene-source">local scene</span>
+            <h3>Loading local scene...</h3>
+            <p>Pulling three indie / underground signal cards from the feed sources.</p>
+          </div>
+        </article>
+      </div>
+    </section>
+
+    <section class="program-module module panel-skin" id="international">
+      <div class="module-head">
+        <h2>International</h2>
+      </div>
+
+      <div id="internationalSceneGrid" class="local-scene-grid" aria-live="polite">
+        <article class="local-scene-card">
+          <div class="local-scene-media local-scene-media-placeholder"></div>
+          <div class="local-scene-copy">
+            <h3>Loading international signal...</h3>
+            <p>Pulling three indie / underground international cards from the feed sources.</p>
+          </div>
+        </article>
+      </div>
+    </section>
+
+  </main>
+
+  <footer class="footer-bar panel-skin">
+    <div>
+      <span class="footer-kicker">Side B Radio</span>
+      <strong>Built for underground transmission, not polite algorithm music.</strong>
+    </div>
+    <a href="#top">Back up top</a>
+  </footer>
+
+  <audio id="streamAudio" preload="none"></audio>
+  <script src="app.js"></script>
+</body>
+</html>
