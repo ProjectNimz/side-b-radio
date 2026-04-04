@@ -1,5 +1,5 @@
 const STREAM_URL = "https://stream.manilasoundradio.com/listen/manila-sound-radio/radio.mp3";
-const NOW_PLAYING_URL = "https://manilasoundradio.com/.netlify/functions/now-playing";
+const NOW_PLAYING_URL = "/.netlify/functions/sideb-now-playing";
 const NOW_PLAYING_REFRESH_MS = 30000;
 
 const audio = document.getElementById("streamAudio");
