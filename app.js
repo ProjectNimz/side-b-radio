@@ -1,4 +1,4 @@
-const STREAM_URL = "https://stream.manilasoundradio.com/listen/manila-sound-radio/radio.mp3";
+const STREAM_URL = "https://stream.manilasoundradio.com/listen/sideb/radio.mp3";
 const NOW_PLAYING_URL = "/.netlify/functions/sideb-now-playing";
 const NOW_PLAYING_REFRESH_MS = 30000;
 const LOCAL_FEED_FALLBACK_IMAGE = "https://images.pexels.com/photos/36422833/pexels-photo-36422833.jpeg?auto=compress&cs=tinysrgb&w=1200";
