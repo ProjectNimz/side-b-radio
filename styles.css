@@ -881,18 +881,23 @@ a { color: inherit; }
 
   .transmission-status {
     width: 100%;
-    align-items: flex-start;
+    align-items: center;
+    flex-wrap: nowrap;
     gap: 10px;
   }
 
   .live-pill {
     min-height: 40px;
     padding: 0 14px;
+    align-self: stretch;
   }
 
   .transmission-status strong {
+    display: flex;
+    align-items: center;
+    min-height: 40px;
     font-size: 0.9rem;
-    line-height: 1.35;
+    line-height: 1.2;
   }
 
   .hero-layout {
