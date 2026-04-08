@@ -17,9 +17,15 @@ function buildPayload(title = "Live stream on air", artist = "Side B Radio") {
 }
 
 function extractStreamTitle(metadataText) {
-  const match = metadataText.match(/StreamTitle='([^']*)'/i);
-  if (!match) return "";
-  return match[1].replace(/\0/g, "").trim();
+  const marker = "StreamTitle='";
+  const startIndex = metadataText.indexOf(marker);
+  if (startIndex < 0) return "";
+
+  const valueStart = startIndex + marker.length;
+  const endIndex = metadataText.lastIndexOf("';");
+  if (endIndex <= valueStart) return "";
+
+  return metadataText.slice(valueStart, endIndex).replace(/\0/g, "").trim();
 }
 
 function splitArtistAndTitle(streamTitle) {

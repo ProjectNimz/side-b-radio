@@ -3,6 +3,7 @@ const NOW_PLAYING_URL = "/.netlify/functions/sideb-now-playing";
 const NOW_PLAYING_REFRESH_MS = 30000;
 const LOCAL_FEED_FALLBACK_IMAGE = "https://images.pexels.com/photos/36422833/pexels-photo-36422833.jpeg?auto=compress&cs=tinysrgb&w=1200";
 const INTERNATIONAL_FEED_FALLBACK_IMAGE = "https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?auto=format&fit=crop&w=1200&q=80";
+const RECENT_TRACKS_STORAGE_KEY = "sidebRecentTracks";
 
 const audio = document.getElementById("streamAudio");
 const playToggle = document.getElementById("transmissionToggle");
@@ -22,7 +23,7 @@ const internationalSceneGrid = document.getElementById("internationalSceneGrid")
 let isPlaying = false;
 let demoMode = true;
 let latestNowPlaying = null;
-let latestRecentlyPlayed = [];
+let latestRecentlyPlayed = loadStoredRecentTracks();
 
 function escapeHtml(value) {
   return String(value)
@@ -60,31 +61,66 @@ function renderRecentlyPlayed(items) {
   `).join("");
 }
 
-function normalizeRecentTracks(payload) {
+function toTrackEntry(song) {
+  const title = song?.title?.trim();
+  const artist = song?.artist?.trim();
+  if (!title && !artist) return null;
+
+  return {
+    title: title || "Untitled cut",
+    artist: artist || "Unknown Artist"
+  };
+}
+
+function getTrackKey(track) {
+  return `${track?.artist || ""}__${track?.title || ""}`.trim().toLowerCase();
+}
+
+function loadStoredRecentTracks() {
+  try {
+    const raw = window.localStorage.getItem(RECENT_TRACKS_STORAGE_KEY);
+    const parsed = JSON.parse(raw || "[]");
+    return Array.isArray(parsed)
+      ? parsed.filter((item) => item && typeof item.title === "string" && typeof item.artist === "string").slice(0, 5)
+      : [];
+  } catch {
+    return [];
+  }
+}
+
+function saveStoredRecentTracks(tracks) {
+  try {
+    window.localStorage.setItem(RECENT_TRACKS_STORAGE_KEY, JSON.stringify(tracks.slice(0, 5)));
+  } catch {
+    // Ignore storage failures and keep the in-memory history.
+  }
+}
+
+function buildRecentTracks(song, historyEntries = []) {
   const tracks = [];
   const seen = new Set();
 
-  const pushTrack = (song) => {
-    const title = song?.title?.trim();
-    const artist = song?.artist?.trim();
-    if (!title && !artist) return;
+  const pushTrack = (value) => {
+    const track = toTrackEntry(value);
+    if (!track) return;
 
-    const key = `${artist || ""}__${title || ""}`.toLowerCase();
-    if (seen.has(key)) return;
+    const key = getTrackKey(track);
+    if (!key || seen.has(key)) return;
     seen.add(key);
-    tracks.push({
-      title: title || "Untitled cut",
-      artist: artist || "Unknown Artist"
-    });
+    tracks.push(track);
   };
 
-  pushTrack(payload?.now_playing?.song);
+  pushTrack(song);
 
-  if (Array.isArray(payload?.song_history)) {
-    payload.song_history.forEach((entry) => pushTrack(entry?.song));
+  if (Array.isArray(historyEntries)) {
+    historyEntries.forEach((entry) => pushTrack(entry?.song));
   }
 
-  return tracks.slice(0, 5);
+  loadStoredRecentTracks().forEach((track) => pushTrack(track));
+
+  const nextTracks = tracks.slice(0, 5);
+  saveStoredRecentTracks(nextTracks);
+  return nextTracks;
 }
 
 function renderLocalScene(items) {
@@ -183,7 +219,7 @@ function applyNowPlayingCopy(song) {
   latestNowPlaying = { title, artist, art };
 
   if (playerLine) {
-    playerLine.textContent = "Now playing from Manila Sound Radio.";
+    playerLine.textContent = "Now playing from Side B Radio.";
   }
   if (trackTitle) {
     trackTitle.textContent = title;
@@ -215,7 +251,7 @@ async function refreshNowPlaying() {
     if (song?.title || song?.artist) {
       applyNowPlayingCopy(song);
     }
-    latestRecentlyPlayed = normalizeRecentTracks(payload);
+    latestRecentlyPlayed = buildRecentTracks(song, payload?.song_history);
     renderRecentlyPlayed(latestRecentlyPlayed);
   } catch {
     // Keep the current display if metadata blips temporarily.
@@ -294,7 +330,7 @@ function setPlayingState() {
     trackTitle.textContent = "Loading current track...";
   }
   if (trackBlurb && !latestNowPlaying?.artist) {
-    trackBlurb.textContent = "Pulling the current song and artist from Manila Sound Radio.";
+    trackBlurb.textContent = "Pulling the current song and artist from Side B Radio.";
   }
   if (deckCoverArt && !latestNowPlaying?.art) {
     deckCoverArt.src = "images/side-b-official-logo.png";
@@ -399,6 +435,7 @@ audio.addEventListener("pause", () => {
 audio.addEventListener("ended", setStoppedState);
 
 setDemoCopy(false);
+renderRecentlyPlayed(latestRecentlyPlayed);
 refreshNowPlaying();
 setInterval(refreshNowPlaying, NOW_PLAYING_REFRESH_MS);
 loadAutoFeeds();
