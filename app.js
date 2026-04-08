@@ -4,6 +4,15 @@ const NOW_PLAYING_REFRESH_MS = 30000;
 const LOCAL_FEED_FALLBACK_IMAGE = "https://images.pexels.com/photos/36422833/pexels-photo-36422833.jpeg?auto=compress&cs=tinysrgb&w=1200";
 const INTERNATIONAL_FEED_FALLBACK_IMAGE = "https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?auto=format&fit=crop&w=1200&q=80";
 const RECENT_TRACKS_STORAGE_KEY = "sidebRecentTracks";
+const STATION_TIMEZONE = "Asia/Manila";
+const PROGRAM_SCHEDULE = [
+  { start: 1, end: 6, label: "AFTER HOURS" },
+  { start: 6, end: 10, label: "MORNING SIGNAL" },
+  { start: 10, end: 16, label: "MIDDAY RUN" },
+  { start: 16, end: 21, label: "PRIME TIME" },
+  { start: 21, end: 24, label: "NIGHT SHIFT" },
+  { start: 0, end: 1, label: "NIGHT SHIFT" }
+];
 
 const audio = document.getElementById("streamAudio");
 const playToggle = document.getElementById("transmissionToggle");
@@ -211,12 +220,54 @@ function renderEditorialFallback(container, items, fallbackImage) {
   `).join("");
 }
 
+function getStationHour(date = new Date()) {
+  const value = new Intl.DateTimeFormat("en-US", {
+    timeZone: STATION_TIMEZONE,
+    hour: "2-digit",
+    hour12: false
+  }).format(date);
+
+  return Number.parseInt(value, 10);
+}
+
+function getCurrentProgramLabel(date = new Date()) {
+  const hour = getStationHour(date);
+  return PROGRAM_SCHEDULE.find(({ start, end }) => hour >= start && hour < end)?.label || "SIDE B SIGNAL";
+}
+
+function syncProgramLabel() {
+  if (playToggleLabel) {
+    playToggleLabel.textContent = getCurrentProgramLabel();
+  }
+}
+
+function formatTransmissionLine(song = latestNowPlaying) {
+  const label = getCurrentProgramLabel();
+  const title = song?.title?.trim();
+  const artist = song?.artist?.trim();
+
+  if (artist && title) {
+    return `${label} | ${artist} | ${title}`;
+  }
+
+  if (artist) {
+    return `${label} | ${artist}`;
+  }
+
+  if (title) {
+    return `${label} | ${title}`;
+  }
+
+  return `${label} | Waiting on artist | track...`;
+}
+
 function applyNowPlayingCopy(song) {
   const title = song?.title?.trim() || "Live stream on air";
   const artist = song?.artist?.trim() || "Unknown Artist";
   const art = song?.art || song?.artFallback || "images/side-b-official-logo.png";
 
   latestNowPlaying = { title, artist, art };
+  syncProgramLabel();
 
   if (playerLine) {
     playerLine.textContent = "Now playing from Side B Radio.";
@@ -235,7 +286,7 @@ function applyNowPlayingCopy(song) {
     deckStateCopy.textContent = `${artist} is currently in the deck.`;
   }
   if (transmissionLine) {
-    transmissionLine.textContent = `${artist} | ${title}`;
+    transmissionLine.textContent = formatTransmissionLine({ title, artist });
   }
 }
 
@@ -291,9 +342,7 @@ function setStoppedState() {
   if (vinylStage) {
     vinylStage.classList.remove("is-spinning");
   }
-  if (playToggleLabel) {
-    playToggleLabel.textContent = "Play Transmission";
-  }
+  syncProgramLabel();
   if (playToggleIcon) {
     playToggleIcon.textContent = "▶";
   }
@@ -303,9 +352,7 @@ function setStoppedState() {
       : "Preview mode loaded for the next host drop.";
   }
   if (transmissionLine) {
-    transmissionLine.textContent = latestNowPlaying?.title && latestNowPlaying?.artist
-      ? `${latestNowPlaying.artist} | ${latestNowPlaying.title}`
-      : "Waiting on artist | track...";
+    transmissionLine.textContent = formatTransmissionLine();
   }
   if (!latestNowPlaying && recentlyPlayedList) {
     renderRecentlyPlayed([]);
@@ -317,9 +364,7 @@ function setPlayingState() {
   if (vinylStage) {
     vinylStage.classList.add("is-spinning");
   }
-  if (playToggleLabel) {
-    playToggleLabel.textContent = "Pause Transmission";
-  }
+  syncProgramLabel();
   if (playToggleIcon) {
     playToggleIcon.textContent = "||";
   }
@@ -342,13 +387,12 @@ function setPlayingState() {
       : "Deck active. The shell is behaving like a live broadcast.";
   }
   if (transmissionLine) {
-    transmissionLine.textContent = latestNowPlaying?.title && latestNowPlaying?.artist
-      ? `${latestNowPlaying.artist} | ${latestNowPlaying.title}`
-      : "Loading artist | track...";
+    transmissionLine.textContent = formatTransmissionLine();
   }
 }
 
 function setDemoCopy(active) {
+  syncProgramLabel();
   if (latestNowPlaying?.title || latestNowPlaying?.artist) {
     applyNowPlayingCopy(latestNowPlaying);
     return;
@@ -365,6 +409,9 @@ function setDemoCopy(active) {
     trackBlurb.textContent = active
       ? "The deck is visually live now. Drop in the real stream later and this turns into a proper broadcast block."
       : "Preview mode is live for now. Once the stream host is ready, this deck flips into broadcast.";
+  }
+  if (transmissionLine && !latestNowPlaying?.title && !latestNowPlaying?.artist) {
+    transmissionLine.textContent = formatTransmissionLine();
   }
 }
 
@@ -405,10 +452,8 @@ async function togglePlayback() {
         : "Playback paused. The shell is ready for the next spin.";
     }
   if (transmissionLine) {
-    transmissionLine.textContent = latestNowPlaying?.title && latestNowPlaying?.artist
-      ? `${latestNowPlaying.artist} | ${latestNowPlaying.title}`
-      : "Waiting on artist | track...";
-    }
+    transmissionLine.textContent = formatTransmissionLine();
+  }
     return;
   }
 
@@ -434,8 +479,10 @@ audio.addEventListener("pause", () => {
 });
 audio.addEventListener("ended", setStoppedState);
 
+syncProgramLabel();
 setDemoCopy(false);
 renderRecentlyPlayed(latestRecentlyPlayed);
 refreshNowPlaying();
 setInterval(refreshNowPlaying, NOW_PLAYING_REFRESH_MS);
+setInterval(syncProgramLabel, 60000);
 loadAutoFeeds();
