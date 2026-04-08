@@ -242,23 +242,22 @@ function syncProgramLabel() {
 }
 
 function formatTransmissionLine(song = latestNowPlaying) {
-  const label = getCurrentProgramLabel();
   const title = song?.title?.trim();
   const artist = song?.artist?.trim();
 
   if (artist && title) {
-    return `${label} | ${artist} | ${title}`;
+    return `${artist} | ${title}`;
   }
 
   if (artist) {
-    return `${label} | ${artist}`;
+    return artist;
   }
 
   if (title) {
-    return `${label} | ${title}`;
+    return title;
   }
 
-  return `${label} | Waiting on artist | track...`;
+  return "Waiting on artist | track...";
 }
 
 function applyNowPlayingCopy(song) {
