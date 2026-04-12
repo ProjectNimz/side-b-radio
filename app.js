@@ -3,7 +3,6 @@ const NOW_PLAYING_URL = "/.netlify/functions/sideb-now-playing";
 const NOW_PLAYING_REFRESH_MS = 30000;
 const LOCAL_FEED_FALLBACK_IMAGE = "https://images.pexels.com/photos/36422833/pexels-photo-36422833.jpeg?auto=compress&cs=tinysrgb&w=1200";
 const INTERNATIONAL_FEED_FALLBACK_IMAGE = "https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?auto=format&fit=crop&w=1200&q=80";
-const RECENT_TRACKS_STORAGE_KEY = "sidebRecentTracks";
 const STATION_TIMEZONE = "Asia/Manila";
 const PROGRAM_SCHEDULE = [
   { start: 1, end: 6, label: "AFTER HOURS" },
@@ -18,13 +17,7 @@ const audio = document.getElementById("streamAudio");
 const playToggle = document.getElementById("transmissionToggle");
 const playToggleIcon = document.querySelector("#transmissionToggle .live-icon");
 const playToggleLabel = document.querySelector("#transmissionToggle .live-label");
-const vinylStage = document.getElementById("vinylStage");
-const deckCoverArt = document.getElementById("deckCoverArt");
-const playerLine = document.getElementById("playerLine");
-const trackTitle = document.getElementById("trackTitle");
-const trackBlurb = document.getElementById("trackBlurb");
 const transmissionLine = document.getElementById("transmissionLine");
-const deckStateCopy = document.getElementById("deckStateCopy");
 const recentlyPlayedList = document.getElementById("recentlyPlayedList");
 const localSceneGrid = document.getElementById("localSceneGrid");
 const internationalSceneGrid = document.getElementById("internationalSceneGrid");
@@ -32,7 +25,7 @@ const internationalSceneGrid = document.getElementById("internationalSceneGrid")
 let isPlaying = false;
 let demoMode = true;
 let latestNowPlaying = null;
-let latestRecentlyPlayed = loadStoredRecentTracks();
+let latestRecentlyPlayed = [];
 
 function escapeHtml(value) {
   return String(value)
@@ -43,21 +36,11 @@ function escapeHtml(value) {
     .replaceAll("'", "&#39;");
 }
 
-function renderFeedFallback(container, sourceLabel, sourceUrl, message) {
-  if (!container) return;
-  container.innerHTML = `
-    <article class="signal-feed-item">
-      <span class="signal-feed-source">${escapeHtml(sourceLabel)}</span>
-      <a href="${escapeHtml(sourceUrl)}" class="signal-feed-link" target="_blank" rel="noopener noreferrer">${escapeHtml(message)}</a>
-    </article>
-  `;
-}
-
 function renderRecentlyPlayed(items) {
   if (!recentlyPlayedList) return;
 
   if (!Array.isArray(items) || items.length === 0) {
-    recentlyPlayedList.innerHTML = `<p class="signal-feed-empty">Waiting on the latest cuts from the live signal.</p>`;
+    recentlyPlayedList.innerHTML = '<p class="signal-feed-empty">Waiting on the latest cuts from the live signal.</p>';
     return;
   }
 
@@ -85,26 +68,6 @@ function getTrackKey(track) {
   return `${track?.artist || ""}__${track?.title || ""}`.trim().toLowerCase();
 }
 
-function loadStoredRecentTracks() {
-  try {
-    const raw = window.localStorage.getItem(RECENT_TRACKS_STORAGE_KEY);
-    const parsed = JSON.parse(raw || "[]");
-    return Array.isArray(parsed)
-      ? parsed.filter((item) => item && typeof item.title === "string" && typeof item.artist === "string").slice(0, 5)
-      : [];
-  } catch {
-    return [];
-  }
-}
-
-function saveStoredRecentTracks(tracks) {
-  try {
-    window.localStorage.setItem(RECENT_TRACKS_STORAGE_KEY, JSON.stringify(tracks.slice(0, 5)));
-  } catch {
-    // Ignore storage failures and keep the in-memory history.
-  }
-}
-
 function buildRecentTracks(song, historyEntries = []) {
   const tracks = [];
   const seen = new Set();
@@ -125,15 +88,7 @@ function buildRecentTracks(song, historyEntries = []) {
     historyEntries.forEach((entry) => pushTrack(entry?.song));
   }
 
-  loadStoredRecentTracks().forEach((track) => pushTrack(track));
-
-  const nextTracks = tracks.slice(0, 5);
-  saveStoredRecentTracks(nextTracks);
-  return nextTracks;
-}
-
-function renderLocalScene(items) {
-  renderEditorialScene(localSceneGrid, items, LOCAL_FEED_FALLBACK_IMAGE);
+  return tracks.slice(0, 5);
 }
 
 function renderEditorialScene(container, items, fallbackImage) {
@@ -156,6 +111,34 @@ function renderEditorialScene(container, items, fallbackImage) {
   `).join("");
 }
 
+function renderEditorialFallback(container, items, fallbackImage) {
+  if (!container) return;
+
+  container.innerHTML = items.map((item) => `
+    <article class="local-scene-card">
+      <div class="local-scene-media local-scene-media-placeholder">
+        <img
+          src="${escapeHtml(fallbackImage)}"
+          alt="${escapeHtml(item.title)}"
+          class="feed-fallback-image">
+      </div>
+      <div class="local-scene-copy">
+        <h3>${escapeHtml(item.title)}</h3>
+        <p>${escapeHtml(item.text)}</p>
+        <a href="${escapeHtml(item.url)}" class="text-link" target="_blank" rel="noopener noreferrer">Read more</a>
+      </div>
+    </article>
+  `).join("");
+}
+
+function renderLocalScene(items) {
+  renderEditorialScene(localSceneGrid, items, LOCAL_FEED_FALLBACK_IMAGE);
+}
+
+function renderInternationalScene(items) {
+  renderEditorialScene(internationalSceneGrid, items, INTERNATIONAL_FEED_FALLBACK_IMAGE);
+}
+
 function renderLocalSceneFallback() {
   renderEditorialFallback(localSceneGrid, [
     {
@@ -176,10 +159,6 @@ function renderLocalSceneFallback() {
   ], LOCAL_FEED_FALLBACK_IMAGE);
 }
 
-function renderInternationalScene(items) {
-  renderEditorialScene(internationalSceneGrid, items, INTERNATIONAL_FEED_FALLBACK_IMAGE);
-}
-
 function renderInternationalFallback() {
   renderEditorialFallback(internationalSceneGrid, [
     {
@@ -198,26 +177,6 @@ function renderInternationalFallback() {
       url: "https://news.google.com/search?q=indie%20rap"
     }
   ], INTERNATIONAL_FEED_FALLBACK_IMAGE);
-}
-
-function renderEditorialFallback(container, items, fallbackImage) {
-  if (!container) return;
-
-  container.innerHTML = items.map((item) => `
-    <article class="local-scene-card">
-      <div class="local-scene-media local-scene-media-placeholder">
-        <img
-          src="${escapeHtml(fallbackImage)}"
-          alt="${escapeHtml(item.title)}"
-          class="feed-fallback-image">
-      </div>
-      <div class="local-scene-copy">
-        <h3>${escapeHtml(item.title)}</h3>
-        <p>${escapeHtml(item.text)}</p>
-        <a href="${escapeHtml(item.url)}" class="text-link" target="_blank" rel="noopener noreferrer">Read more</a>
-      </div>
-    </article>
-  `).join("");
 }
 
 function getStationHour(date = new Date()) {
@@ -245,17 +204,9 @@ function formatTransmissionLine(song = latestNowPlaying) {
   const title = song?.title?.trim();
   const artist = song?.artist?.trim();
 
-  if (artist && title) {
-    return `${artist} | ${title}`;
-  }
-
-  if (artist) {
-    return artist;
-  }
-
-  if (title) {
-    return title;
-  }
+  if (artist && title) return `${artist} | ${title}`;
+  if (artist) return artist;
+  if (title) return title;
 
   return "Waiting on artist | track...";
 }
@@ -266,52 +217,34 @@ function applyNowPlayingCopy(song) {
   const art = song?.art || song?.artFallback || "images/side-b-official-logo.png";
 
   latestNowPlaying = { title, artist, art };
-  syncProgramLabel();
 
-  if (playerLine) {
-    playerLine.textContent = "Now playing from Side B Radio.";
-  }
-  if (trackTitle) {
-    trackTitle.textContent = title;
-  }
-  if (trackBlurb) {
-    trackBlurb.textContent = `Artist: ${artist}`;
-  }
-  if (deckCoverArt) {
-    deckCoverArt.src = art;
-    deckCoverArt.alt = `${title} cover art`;
-  }
-  if (deckStateCopy) {
-    deckStateCopy.textContent = `${artist} is currently in the deck.`;
-  }
   if (transmissionLine) {
-    transmissionLine.textContent = formatTransmissionLine({ title, artist });
+    transmissionLine.textContent = formatTransmissionLine(latestNowPlaying);
   }
 }
 
 async function refreshNowPlaying() {
   try {
     const response = await fetch(`${NOW_PLAYING_URL}?t=${Date.now()}`);
-    if (!response.ok) {
-      return;
-    }
+    if (!response.ok) return;
 
     const payload = await response.json();
     const song = payload?.now_playing?.song;
+
     if (song?.title || song?.artist) {
       applyNowPlayingCopy(song);
     }
+
     latestRecentlyPlayed = buildRecentTracks(song, payload?.song_history);
     renderRecentlyPlayed(latestRecentlyPlayed);
   } catch {
-    // Keep the current display if metadata blips temporarily.
+    // Keep current UI state if metadata blips temporarily.
   }
 }
 
 async function loadAutoFeeds() {
-  if (!localSceneGrid && !internationalSceneGrid) {
-    return;
-  }
+  if (!localSceneGrid && !internationalSceneGrid) return;
+
   try {
     const response = await fetch(`/.netlify/functions/sideb-feeds?t=${Date.now()}`);
     if (!response.ok) {
@@ -319,6 +252,7 @@ async function loadAutoFeeds() {
     }
 
     const payload = await response.json();
+
     if (Array.isArray(payload.localScene) && payload.localScene.length > 0) {
       renderLocalScene(payload.localScene);
     } else {
@@ -330,7 +264,7 @@ async function loadAutoFeeds() {
     } else {
       renderInternationalFallback();
     }
-  } catch (_error) {
+  } catch {
     renderLocalSceneFallback();
     renderInternationalFallback();
   }
@@ -338,53 +272,29 @@ async function loadAutoFeeds() {
 
 function setStoppedState() {
   isPlaying = false;
-  if (vinylStage) {
-    vinylStage.classList.remove("is-spinning");
-  }
   syncProgramLabel();
+
   if (playToggleIcon) {
-    playToggleIcon.textContent = "▶";
+    playToggleIcon.textContent = "\u25B6";
   }
-  if (deckStateCopy) {
-    deckStateCopy.textContent = latestNowPlaying?.artist
-      ? `${latestNowPlaying.artist} is currently in the deck.`
-      : "Preview mode loaded for the next host drop.";
-  }
+
   if (transmissionLine) {
     transmissionLine.textContent = formatTransmissionLine();
   }
-  if (!latestNowPlaying && recentlyPlayedList) {
+
+  if (!latestNowPlaying) {
     renderRecentlyPlayed([]);
   }
 }
 
 function setPlayingState() {
   isPlaying = true;
-  if (vinylStage) {
-    vinylStage.classList.add("is-spinning");
-  }
   syncProgramLabel();
+
   if (playToggleIcon) {
     playToggleIcon.textContent = "||";
   }
-  if (playerLine) {
-    playerLine.textContent = "Live stream connected.";
-  }
-  if (trackTitle && !latestNowPlaying?.title) {
-    trackTitle.textContent = "Loading current track...";
-  }
-  if (trackBlurb && !latestNowPlaying?.artist) {
-    trackBlurb.textContent = "Pulling the current song and artist from Side B Radio.";
-  }
-  if (deckCoverArt && !latestNowPlaying?.art) {
-    deckCoverArt.src = "images/side-b-official-logo.png";
-    deckCoverArt.alt = "Side B Radio cover art fallback";
-  }
-  if (deckStateCopy) {
-    deckStateCopy.textContent = latestNowPlaying?.artist
-      ? `${latestNowPlaying.artist} is currently in the deck.`
-      : "Deck active. The shell is behaving like a live broadcast.";
-  }
+
   if (transmissionLine) {
     transmissionLine.textContent = formatTransmissionLine();
   }
@@ -392,36 +302,29 @@ function setPlayingState() {
 
 function setDemoCopy(active) {
   syncProgramLabel();
+
   if (latestNowPlaying?.title || latestNowPlaying?.artist) {
     applyNowPlayingCopy(latestNowPlaying);
     return;
   }
-  if (playerLine) {
-    playerLine.textContent = active
-      ? "Demo spin active while the stream host gets sorted out."
-      : "The deck is built and waiting for your future Side B stream.";
-  }
-  if (trackTitle) {
-    trackTitle.textContent = active ? "Record spinning in preview mode" : "Needle up. Signal pending.";
-  }
-  if (trackBlurb) {
-    trackBlurb.textContent = active
-      ? "The deck is visually live now. Drop in the real stream later and this turns into a proper broadcast block."
-      : "Preview mode is live for now. Once the stream host is ready, this deck flips into broadcast.";
-  }
-  if (transmissionLine && !latestNowPlaying?.title && !latestNowPlaying?.artist) {
-    transmissionLine.textContent = formatTransmissionLine();
+
+  if (transmissionLine) {
+    transmissionLine.textContent = active
+      ? "Preview signal active while the live stream settles in."
+      : "Waiting on artist | track...";
   }
 }
 
 async function togglePlayback() {
   if (!STREAM_URL) {
     demoMode = true;
+
     if (isPlaying) {
       setStoppedState();
       setDemoCopy(false);
       return;
     }
+
     setPlayingState();
     setDemoCopy(true);
     return;
@@ -434,25 +337,6 @@ async function togglePlayback() {
   if (isPlaying) {
     audio.pause();
     setStoppedState();
-    if (playerLine) {
-      playerLine.textContent = "Deck paused.";
-    }
-    if (trackTitle) {
-      trackTitle.textContent = latestNowPlaying?.title || "Needle up. Signal pending.";
-    }
-    if (trackBlurb) {
-      trackBlurb.textContent = latestNowPlaying?.artist
-        ? `Artist: ${latestNowPlaying.artist}`
-        : "Preview mode is live for now. Once the stream host is ready, this deck flips into broadcast.";
-    }
-    if (deckStateCopy) {
-      deckStateCopy.textContent = latestNowPlaying?.artist
-        ? `${latestNowPlaying.artist} is currently in the deck.`
-        : "Playback paused. The shell is ready for the next spin.";
-    }
-  if (transmissionLine) {
-    transmissionLine.textContent = formatTransmissionLine();
-  }
     return;
   }
 
@@ -461,7 +345,7 @@ async function togglePlayback() {
     demoMode = false;
     setPlayingState();
     await refreshNowPlaying();
-  } catch (_error) {
+  } catch {
     demoMode = true;
     setPlayingState();
     setDemoCopy(true);
@@ -471,12 +355,15 @@ async function togglePlayback() {
 if (playToggle) {
   playToggle.addEventListener("click", togglePlayback);
 }
-audio.addEventListener("pause", () => {
-  if (!demoMode) {
-    setStoppedState();
-  }
-});
-audio.addEventListener("ended", setStoppedState);
+
+if (audio) {
+  audio.addEventListener("pause", () => {
+    if (!demoMode) {
+      setStoppedState();
+    }
+  });
+  audio.addEventListener("ended", setStoppedState);
+}
 
 syncProgramLabel();
 setDemoCopy(false);

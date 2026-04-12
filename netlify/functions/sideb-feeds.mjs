@@ -41,7 +41,8 @@ function trimText(text, limit = 140) {
   if (compact.length <= limit) {
     return compact;
   }
-  return `${compact.slice(0, limit - 1).trimEnd()}…`;
+
+  return `${compact.slice(0, limit - 3).trimEnd()}...`;
 }
 
 function stripHtml(text) {
@@ -53,9 +54,11 @@ function normalizeWhitespace(text) {
 }
 
 function cleanTitle(text) {
-  return normalizeWhitespace(String(text)
-    .replace(/\s+[|\-–—]\s+(Rolling Stone Philippines|Billboard Philippines|Bandwagon|Okayplayer|UndergroundHipHopBlog(?:\.com)?|Bandcamp Daily)$/i, "")
-    .replace(/\s+[|\-–—]\s+Google News$/i, ""));
+  return normalizeWhitespace(
+    String(text)
+      .replace(/\s+[\|\-\u2013\u2014]\s+(Rolling Stone Philippines|Billboard Philippines|Bandwagon|Okayplayer|UndergroundHipHopBlog(?:\.com)?|Bandcamp Daily)$/i, "")
+      .replace(/\s+[\|\-\u2013\u2014]\s+Google News$/i, "")
+  );
 }
 
 function isMostlyLatin(text) {
@@ -79,8 +82,6 @@ function hasBlockedTerms(text) {
   const blocked = [
     "ministry of foreign affairs",
     "republic of belarus",
-    "министерство",
-    "республики",
     "spotify hits philippines linked internet page",
     "linked internet page"
   ];
@@ -93,17 +94,9 @@ function isUsableItem(item) {
   const summary = normalizeWhitespace(stripHtml(item?.description ?? item?.content ?? ""));
   const combined = `${title} ${summary}`;
 
-  if (!title) {
-    return false;
-  }
-
-  if (!isMostlyLatin(combined)) {
-    return false;
-  }
-
-  if (hasBlockedTerms(combined)) {
-    return false;
-  }
+  if (!title) return false;
+  if (!isMostlyLatin(combined)) return false;
+  if (hasBlockedTerms(combined)) return false;
 
   return true;
 }
@@ -149,6 +142,7 @@ async function fetchFeed(feed, maxItemsPerFeed = 1) {
 
 async function collect(feeds, { maxItems = feeds.length, maxItemsPerFeed = 1 } = {}) {
   const results = await Promise.allSettled(feeds.map((feed) => fetchFeed(feed, maxItemsPerFeed)));
+
   return results
     .filter((result) => result.status === "fulfilled")
     .flatMap((result) => result.value)

@@ -1,4 +1,8 @@
 const STREAM_URL = "https://stream.manilasoundradio.com/listen/sideb/radio.mp3";
+const AZURACAST_NOW_PLAYING_URLS = [
+  "https://stream.manilasoundradio.com/api/nowplaying/sideb",
+  "https://stream.manilasoundradio.com/api/nowplaying/side-b-radio"
+];
 const FALLBACK_ART = "/images/side-b-official-logo.png";
 const REQUEST_TIMEOUT_MS = 15000;
 
@@ -14,6 +18,56 @@ function buildPayload(title = "Live stream on air", artist = "Side B Radio") {
     },
     song_history: []
   };
+}
+
+function normalizeSong(song) {
+  return {
+    title: song?.title || "Live stream on air",
+    artist: song?.artist || "Side B Radio",
+    art: song?.art || FALLBACK_ART,
+    artFallback: song?.art || song?.artFallback || FALLBACK_ART
+  };
+}
+
+function normalizeHistory(history) {
+  if (!Array.isArray(history)) {
+    return [];
+  }
+
+  return history
+    .map((entry) => {
+      if (!entry?.song) return null;
+
+      return {
+        ...entry,
+        song: normalizeSong(entry.song)
+      };
+    })
+    .filter(Boolean)
+    .slice(0, 10);
+}
+
+async function fetchJson(url, timeoutMs = REQUEST_TIMEOUT_MS) {
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), timeoutMs);
+
+  try {
+    const response = await fetch(url, {
+      headers: {
+        Accept: "application/json",
+        "User-Agent": "SideBRadioNowPlaying/1.0"
+      },
+      signal: controller.signal
+    });
+
+    if (!response.ok) {
+      throw new Error(`Request failed: ${response.status}`);
+    }
+
+    return await response.json();
+  } finally {
+    clearTimeout(timeout);
+  }
 }
 
 function extractStreamTitle(metadataText) {
@@ -33,8 +87,7 @@ function splitArtistAndTitle(streamTitle) {
     return { artist: "Side B Radio", title: "Live stream on air" };
   }
 
-  const separators = [" - ", " | "];
-  for (const separator of separators) {
+  for (const separator of [" - ", " | "]) {
     const index = streamTitle.indexOf(separator);
     if (index > 0) {
       return {
@@ -79,8 +132,7 @@ async function readIcyMetadata() {
       throw new Error(`Stream request failed: ${response.status}`);
     }
 
-    const metaIntHeader = response.headers.get("icy-metaint");
-    const metaInt = Number.parseInt(metaIntHeader || "", 10);
+    const metaInt = Number.parseInt(response.headers.get("icy-metaint") || "", 10);
     if (!Number.isFinite(metaInt) || metaInt <= 0 || !response.body) {
       return buildPayload();
     }
@@ -139,9 +191,29 @@ async function readIcyMetadata() {
   }
 }
 
+async function fetchAzuraCastNowPlaying() {
+  let lastError = null;
+
+  for (const url of AZURACAST_NOW_PLAYING_URLS) {
+    try {
+      const payload = await fetchJson(url);
+      const song = normalizeSong(payload?.now_playing?.song || {});
+
+      return {
+        now_playing: { song },
+        song_history: normalizeHistory(payload?.song_history)
+      };
+    } catch (error) {
+      lastError = error;
+    }
+  }
+
+  throw lastError || new Error("Unable to load Side B now-playing data.");
+}
+
 export default async function handler() {
   try {
-    const payload = await readIcyMetadata();
+    const payload = await fetchAzuraCastNowPlaying();
 
     return new Response(JSON.stringify(payload), {
       status: 200,
@@ -150,16 +222,28 @@ export default async function handler() {
         "Cache-Control": "public, max-age=15"
       }
     });
-  } catch (error) {
-    return new Response(JSON.stringify({
-      ...buildPayload(),
-      error: error instanceof Error ? error.message : "Unknown now playing error"
-    }), {
-      status: 200,
-      headers: {
-        "Content-Type": "application/json; charset=utf-8",
-        "Cache-Control": "no-store"
-      }
-    });
+  } catch {
+    try {
+      const fallbackPayload = await readIcyMetadata();
+
+      return new Response(JSON.stringify(fallbackPayload), {
+        status: 200,
+        headers: {
+          "Content-Type": "application/json; charset=utf-8",
+          "Cache-Control": "public, max-age=15"
+        }
+      });
+    } catch (error) {
+      return new Response(JSON.stringify({
+        ...buildPayload(),
+        error: error instanceof Error ? error.message : "Unknown now playing error"
+      }), {
+        status: 200,
+        headers: {
+          "Content-Type": "application/json; charset=utf-8",
+          "Cache-Control": "no-store"
+        }
+      });
+    }
   }
 }
