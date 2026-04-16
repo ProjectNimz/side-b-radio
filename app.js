@@ -22,6 +22,21 @@ const recentlyPlayedList = document.getElementById("recentlyPlayedList");
 const localSceneGrid = document.getElementById("localSceneGrid");
 const internationalSceneGrid = document.getElementById("internationalSceneGrid");
 
+function ensureAudioSource() {
+  if (!audio) return false;
+  if (audio.getAttribute("src") !== STREAM_URL) {
+    audio.src = STREAM_URL;
+  }
+  return true;
+}
+
+function primeAudioConnection() {
+  if (!ensureAudioSource()) return;
+  if (audio.networkState === HTMLMediaElement.NETWORK_EMPTY) {
+    audio.load();
+  }
+}
+
 let isPlaying = false;
 let demoMode = true;
 let latestNowPlaying = null;
@@ -330,9 +345,7 @@ async function togglePlayback() {
     return;
   }
 
-  if (!audio.src) {
-    audio.src = STREAM_URL;
-  }
+  primeAudioConnection();
 
   if (isPlaying) {
     audio.pause();
@@ -353,6 +366,7 @@ async function togglePlayback() {
 }
 
 if (playToggle) {
+  playToggle.addEventListener("pointerdown", primeAudioConnection, { passive: true });
   playToggle.addEventListener("click", togglePlayback);
 }
 
