@@ -30,16 +30,14 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="styles.css">
+  <link rel="stylesheet" href="styles.css?v=20260416p">
 </head>
 <body>
   <div class="noise"></div>
 
   <header class="masthead" id="top">
     <div class="masthead-rail">
-      <span class="rail-tag">SIDE B SIGNAL</span>
-      <span class="rail-dot"></span>
-      <span class="rail-copy">indie / underground / pinoy rap transmission</span>
+      <span class="rail-tag">SIDE B SIGNAL: <span class="rail-tag-live">ON AIR</span></span>
     </div>
 
     <section class="transmission-strip panel-skin" aria-label="Broadcast status">
@@ -54,14 +52,35 @@
 
     <div class="hero-layout">
       <section class="brand-panel panel-skin">
-        <div class="brand-mobile-logo" aria-hidden="true">
-          <img src="images/side-b-official-logo.png" alt="">
-        </div>
         <span class="tape tape-orange">broadcasting from the other side</span>
         <div class="brand-stack">
           <h1>SIDE B<br>RADIO</h1>
           <p class="brand-summary">Underground rotation for indie rap, Pinoy cuts, and records that hit harder after dark.</p>
         </div>
+
+        <section class="mobile-player-card panel-skin" aria-label="Now playing">
+
+          <div class="mobile-player-artframe">
+            <img id="mobilePlayerArt" src="images/side-b-official-logo.png" alt="Current track artwork">
+          </div>
+
+          <p id="mobilePlayerArtist" class="mobile-player-artist">Unknown Artist</p>
+          <h2 id="mobilePlayerTitle" class="mobile-player-title">Waiting on track...</h2>
+
+          <div class="mobile-player-meter" aria-hidden="true">
+            <span class="mobile-player-meter-fill"></span>
+          </div>
+
+          <div class="mobile-player-controls">
+            <button class="mobile-player-icon" type="button" aria-label="Shuffle" disabled>⤮</button>
+            <button class="mobile-player-icon" type="button" aria-label="Previous" disabled>⏮</button>
+            <button id="mobilePlayerToggle" class="mobile-player-toggle" type="button" aria-label="Play live stream">
+              <span class="mobile-player-toggle-icon" aria-hidden="true">▶</span>
+            </button>
+            <button class="mobile-player-icon" type="button" aria-label="Next" disabled>⏭</button>
+            <button class="mobile-player-icon" type="button" aria-label="Queue" disabled>☰</button>
+          </div>
+        </section>
 
         <div class="brand-bottom">
           <div class="sticker-row">
@@ -72,9 +91,7 @@
 
           <section class="recent-footer" aria-labelledby="recentFooterTitle">
             <span class="tape tape-orange recent-footer-label" id="recentFooterTitle">recently played</span>
-            <div id="recentlyPlayedList" class="recently-played-list" aria-live="polite">
-              <p class="signal-feed-empty">Waiting on the latest cuts from the live signal.</p>
-            </div>
+            <div id="recentlyPlayedList" class="recently-played-list" aria-live="polite"></div>
           </section>
         </div>
       </section>
@@ -87,37 +104,74 @@
     </div>
   </header>
 
+  <section class="recent-mobile-module module panel-skin collapsible-module" aria-labelledby="recentMobileTitle" data-collapsible>
+    <div class="module-head recent-module-head">
+      <span class="tape tape-orange recent-footer-label" id="recentMobileTitle">recently played</span>
+      <button
+        class="module-toggle"
+        type="button"
+        aria-expanded="false"
+        aria-controls="recentMobileBody">
+        <span>Show</span>
+        <span class="module-toggle-arrow" aria-hidden="true">›</span>
+      </button>
+    </div>
+    <div id="recentMobileBody" class="module-body">
+      <div id="recentlyPlayedListMobile" class="recently-played-list" aria-live="polite"></div>
+    </div>
+  </section>
+
   <main class="board">
-    <section class="program-module module panel-skin" id="programming">
+    <section class="program-module module panel-skin collapsible-module" id="programming" data-collapsible>
       <div class="module-head">
         <h2>Local Scene</h2>
+        <button
+          class="module-toggle"
+          type="button"
+          aria-expanded="false"
+          aria-controls="programmingBody">
+          <span>Show</span>
+          <span class="module-toggle-arrow" aria-hidden="true">›</span>
+        </button>
       </div>
 
-      <div id="localSceneGrid" class="local-scene-grid" aria-live="polite">
-        <article class="local-scene-card">
-          <div class="local-scene-media local-scene-media-placeholder"></div>
-          <div class="local-scene-copy">
-            <span class="local-scene-source">local scene</span>
-            <h3>Loading local scene...</h3>
-            <p>Pulling three indie / underground signal cards from the feed sources.</p>
-          </div>
-        </article>
+      <div id="programmingBody" class="module-body">
+        <div id="localSceneGrid" class="local-scene-grid" aria-live="polite">
+          <article class="local-scene-card">
+            <div class="local-scene-media local-scene-media-placeholder"></div>
+            <div class="local-scene-copy">
+              <span class="local-scene-source">local scene</span>
+              <h3>Loading local scene...</h3>
+              <p>Pulling three indie / underground signal cards from the feed sources.</p>
+            </div>
+          </article>
+        </div>
       </div>
     </section>
 
-    <section class="program-module module panel-skin" id="international">
+    <section class="program-module module panel-skin collapsible-module" id="international" data-collapsible>
       <div class="module-head">
         <h2>International</h2>
+        <button
+          class="module-toggle"
+          type="button"
+          aria-expanded="false"
+          aria-controls="internationalBody">
+          <span>Show</span>
+          <span class="module-toggle-arrow" aria-hidden="true">›</span>
+        </button>
       </div>
 
-      <div id="internationalSceneGrid" class="local-scene-grid" aria-live="polite">
-        <article class="local-scene-card">
-          <div class="local-scene-media local-scene-media-placeholder"></div>
-          <div class="local-scene-copy">
-            <h3>Loading international signal...</h3>
-            <p>Pulling three indie / underground international cards from the feed sources.</p>
-          </div>
-        </article>
+      <div id="internationalBody" class="module-body">
+        <div id="internationalSceneGrid" class="local-scene-grid" aria-live="polite">
+          <article class="local-scene-card">
+            <div class="local-scene-media local-scene-media-placeholder"></div>
+            <div class="local-scene-copy">
+              <h3>Loading international signal...</h3>
+              <p>Pulling three indie / underground international cards from the feed sources.</p>
+            </div>
+          </article>
+        </div>
       </div>
     </section>
 
@@ -132,6 +186,6 @@
   </footer>
 
   <audio id="streamAudio" preload="none"></audio>
-  <script src="app.js?v=20260415a"></script>
+  <script src="app.js?v=20260416c"></script>
 </body>
 </html>

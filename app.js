@@ -18,9 +18,20 @@ const playToggle = document.getElementById("transmissionToggle");
 const playToggleIcon = document.querySelector("#transmissionToggle .live-icon");
 const playToggleLabel = document.querySelector("#transmissionToggle .live-label");
 const transmissionLine = document.getElementById("transmissionLine");
-const recentlyPlayedList = document.getElementById("recentlyPlayedList");
+const mobilePlayerCard = document.querySelector(".mobile-player-card");
+const mobilePlayToggle = document.getElementById("mobilePlayerToggle");
+const mobilePlayToggleIcon = document.querySelector(".mobile-player-toggle-icon");
+const mobilePlayerArtist = document.getElementById("mobilePlayerArtist");
+const mobilePlayerTitle = document.getElementById("mobilePlayerTitle");
+const mobilePlayerArt = document.getElementById("mobilePlayerArt");
+const recentlyPlayedLists = [
+  document.getElementById("recentlyPlayedList"),
+  document.getElementById("recentlyPlayedListMobile")
+].filter(Boolean);
 const localSceneGrid = document.getElementById("localSceneGrid");
 const internationalSceneGrid = document.getElementById("internationalSceneGrid");
+const collapsibleModules = Array.from(document.querySelectorAll("[data-collapsible]"));
+const mobileSectionMedia = window.matchMedia("(max-width: 640px)");
 
 function ensureAudioSource() {
   if (!audio) return false;
@@ -52,20 +63,26 @@ function escapeHtml(value) {
 }
 
 function renderRecentlyPlayed(items) {
-  if (!recentlyPlayedList) return;
+  if (recentlyPlayedLists.length === 0) return;
 
   if (!Array.isArray(items) || items.length === 0) {
-    recentlyPlayedList.innerHTML = '<p class="signal-feed-empty">Waiting on the latest cuts from the live signal.</p>';
+    recentlyPlayedLists.forEach((list) => {
+      list.innerHTML = "";
+    });
     return;
   }
 
-  recentlyPlayedList.innerHTML = items.slice(0, 5).map((item, index) => `
-    <article class="recently-played-item">
-      <span class="recently-played-kicker">${index === 0 ? "now" : `spin ${index + 1}`}</span>
-      <strong class="recently-played-title">${escapeHtml(item.title)}</strong>
-      <span class="recently-played-artist">${escapeHtml(item.artist)}</span>
-    </article>
-  `).join("");
+  const markup = items.slice(0, 5).map((item, index) => `
+      <article class="recently-played-item">
+        <span class="recently-played-kicker">${index === 0 ? "now" : `spin ${index + 1}`}</span>
+        <strong class="recently-played-title">${escapeHtml(item.title)}</strong>
+        <span class="recently-played-artist">${escapeHtml(item.artist)}</span>
+      </article>
+    `).join("");
+
+  recentlyPlayedLists.forEach((list) => {
+    list.innerHTML = markup;
+  });
 }
 
 function toTrackEntry(song) {
@@ -226,6 +243,25 @@ function formatTransmissionLine(song = latestNowPlaying) {
   return "Waiting on artist | track...";
 }
 
+function syncMobilePlayer(song = latestNowPlaying) {
+  const title = song?.title?.trim() || "Waiting on track...";
+  const artist = song?.artist?.trim() || "Unknown Artist";
+  const art = song?.art || song?.artFallback || "images/side-b-official-logo.png";
+
+  if (mobilePlayerArtist) {
+    mobilePlayerArtist.textContent = artist;
+  }
+
+  if (mobilePlayerTitle) {
+    mobilePlayerTitle.textContent = title;
+  }
+
+  if (mobilePlayerArt) {
+    mobilePlayerArt.src = art;
+    mobilePlayerArt.alt = `${artist} - ${title}`;
+  }
+}
+
 function applyNowPlayingCopy(song) {
   const title = song?.title?.trim() || "Live stream on air";
   const artist = song?.artist?.trim() || "Unknown Artist";
@@ -236,6 +272,8 @@ function applyNowPlayingCopy(song) {
   if (transmissionLine) {
     transmissionLine.textContent = formatTransmissionLine(latestNowPlaying);
   }
+
+  syncMobilePlayer(latestNowPlaying);
 }
 
 async function refreshNowPlaying() {
@@ -297,6 +335,12 @@ function setStoppedState() {
     transmissionLine.textContent = formatTransmissionLine();
   }
 
+  if (mobilePlayToggleIcon) {
+    mobilePlayToggleIcon.textContent = "\u25B6";
+  }
+
+  mobilePlayerCard?.classList.remove("is-live");
+
   if (!latestNowPlaying) {
     renderRecentlyPlayed([]);
   }
@@ -313,6 +357,12 @@ function setPlayingState() {
   if (transmissionLine) {
     transmissionLine.textContent = formatTransmissionLine();
   }
+
+  if (mobilePlayToggleIcon) {
+    mobilePlayToggleIcon.textContent = "||";
+  }
+
+  mobilePlayerCard?.classList.add("is-live");
 }
 
 function setDemoCopy(active) {
@@ -328,6 +378,8 @@ function setDemoCopy(active) {
       ? "Preview signal active while the live stream settles in."
       : "Waiting on artist | track...";
   }
+
+  syncMobilePlayer(latestNowPlaying);
 }
 
 async function togglePlayback() {
@@ -365,10 +417,58 @@ async function togglePlayback() {
   }
 }
 
-if (playToggle) {
-  playToggle.addEventListener("pointerdown", primeAudioConnection, { passive: true });
-  playToggle.addEventListener("click", togglePlayback);
+function bindPlaybackControl(control) {
+  if (!control) return;
+  control.addEventListener("pointerdown", primeAudioConnection, { passive: true });
+  control.addEventListener("click", togglePlayback);
 }
+
+function setModuleOpenState(module, isOpen) {
+  const toggle = module.querySelector(".module-toggle");
+  if (!toggle) return;
+
+  module.classList.toggle("is-open", isOpen);
+  toggle.setAttribute("aria-expanded", String(isOpen));
+  toggle.querySelector("span")?.replaceChildren(isOpen ? "Hide" : "Show");
+}
+
+function syncCollapsibleModules() {
+  collapsibleModules.forEach((module) => {
+    const isMobile = mobileSectionMedia.matches;
+
+    if (!isMobile) {
+      module.classList.remove("is-open");
+      const toggle = module.querySelector(".module-toggle");
+      if (toggle) {
+        toggle.setAttribute("aria-expanded", "true");
+        toggle.querySelector("span")?.replaceChildren("Show");
+      }
+      return;
+    }
+
+    const shouldOpen = module.classList.contains("is-open");
+    setModuleOpenState(module, shouldOpen);
+  });
+}
+
+collapsibleModules.forEach((module) => {
+  const toggle = module.querySelector(".module-toggle");
+  if (!toggle) return;
+
+  toggle.addEventListener("click", () => {
+    if (!mobileSectionMedia.matches) return;
+    setModuleOpenState(module, !module.classList.contains("is-open"));
+  });
+});
+
+if (typeof mobileSectionMedia.addEventListener === "function") {
+  mobileSectionMedia.addEventListener("change", syncCollapsibleModules);
+} else if (typeof mobileSectionMedia.addListener === "function") {
+  mobileSectionMedia.addListener(syncCollapsibleModules);
+}
+
+bindPlaybackControl(playToggle);
+bindPlaybackControl(mobilePlayToggle);
 
 if (audio) {
   audio.addEventListener("pause", () => {
@@ -382,6 +482,7 @@ if (audio) {
 syncProgramLabel();
 setDemoCopy(false);
 renderRecentlyPlayed(latestRecentlyPlayed);
+syncCollapsibleModules();
 refreshNowPlaying();
 setInterval(refreshNowPlaying, NOW_PLAYING_REFRESH_MS);
 setInterval(syncProgramLabel, 60000);
