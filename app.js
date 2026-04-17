@@ -21,9 +21,13 @@ const transmissionLine = document.getElementById("transmissionLine");
 const mobilePlayerCard = document.querySelector(".mobile-player-card");
 const mobilePlayToggle = document.getElementById("mobilePlayerToggle");
 const mobilePlayToggleIcon = document.querySelector(".mobile-player-toggle-icon");
+const mobileSectionNavToggle = document.getElementById("mobileSectionNavToggle");
+const mobileSectionNav = document.getElementById("mobileSectionNav");
+const mobileSectionNavLinks = Array.from(document.querySelectorAll(".mobile-section-nav-link"));
 const mobilePlayerArtist = document.getElementById("mobilePlayerArtist");
 const mobilePlayerTitle = document.getElementById("mobilePlayerTitle");
 const mobilePlayerArt = document.getElementById("mobilePlayerArt");
+const mobileVolumeControl = document.getElementById("mobileVolumeControl");
 const recentlyPlayedLists = [
   document.getElementById("recentlyPlayedList"),
   document.getElementById("recentlyPlayedListMobile")
@@ -423,6 +427,12 @@ function bindPlaybackControl(control) {
   control.addEventListener("click", togglePlayback);
 }
 
+function setSectionNavOpenState(isOpen) {
+  if (!mobileSectionNavToggle || !mobileSectionNav) return;
+  mobileSectionNavToggle.setAttribute("aria-expanded", String(isOpen));
+  mobileSectionNav.classList.toggle("is-open", isOpen);
+}
+
 function setModuleOpenState(module, isOpen) {
   const toggle = module.querySelector(".module-toggle");
   if (!toggle) return;
@@ -436,19 +446,23 @@ function syncCollapsibleModules() {
   collapsibleModules.forEach((module) => {
     const isMobile = mobileSectionMedia.matches;
 
-    if (!isMobile) {
-      module.classList.remove("is-open");
-      const toggle = module.querySelector(".module-toggle");
-      if (toggle) {
-        toggle.setAttribute("aria-expanded", "true");
-        toggle.querySelector("span")?.replaceChildren("Show");
+      if (!isMobile) {
+        module.classList.remove("is-open");
+        const toggle = module.querySelector(".module-toggle");
+        if (toggle) {
+          toggle.setAttribute("aria-expanded", "true");
+          toggle.querySelector("span")?.replaceChildren("Show");
+        }
+        return;
       }
-      return;
-    }
 
     const shouldOpen = module.classList.contains("is-open");
     setModuleOpenState(module, shouldOpen);
   });
+
+  if (!mobileSectionMedia.matches) {
+    setSectionNavOpenState(false);
+  }
 }
 
 collapsibleModules.forEach((module) => {
@@ -461,6 +475,46 @@ collapsibleModules.forEach((module) => {
   });
 });
 
+if (mobileSectionNavToggle) {
+  mobileSectionNavToggle.addEventListener("click", (event) => {
+    event.stopPropagation();
+    const isOpen = mobileSectionNav?.classList.contains("is-open");
+    setSectionNavOpenState(!isOpen);
+  });
+}
+
+if (mobileSectionNav) {
+  mobileSectionNav.addEventListener("click", (event) => {
+    event.stopPropagation();
+  });
+}
+
+mobileSectionNavLinks.forEach((link) => {
+  link.addEventListener("click", () => {
+    const targetId = link.dataset.scrollTarget;
+    const target = targetId ? document.getElementById(targetId) : null;
+    if (!target) return;
+
+    const parentModule = target.closest("[data-collapsible]");
+    if (parentModule && mobileSectionMedia.matches) {
+      setModuleOpenState(parentModule, true);
+    }
+
+    setSectionNavOpenState(false);
+
+    requestAnimationFrame(() => {
+      target.scrollIntoView({ behavior: "smooth", block: "start" });
+    });
+  });
+});
+
+document.addEventListener("click", (event) => {
+  if (!mobileSectionNav?.classList.contains("is-open")) return;
+  if (mobileSectionNavToggle?.contains(event.target)) return;
+  if (mobileSectionNav?.contains(event.target)) return;
+  setSectionNavOpenState(false);
+});
+
 if (typeof mobileSectionMedia.addEventListener === "function") {
   mobileSectionMedia.addEventListener("change", syncCollapsibleModules);
 } else if (typeof mobileSectionMedia.addListener === "function") {
@@ -469,6 +523,13 @@ if (typeof mobileSectionMedia.addEventListener === "function") {
 
 bindPlaybackControl(playToggle);
 bindPlaybackControl(mobilePlayToggle);
+
+if (audio && mobileVolumeControl) {
+  audio.volume = Number.parseFloat(mobileVolumeControl.value) || 1;
+  mobileVolumeControl.addEventListener("input", () => {
+    audio.volume = Number.parseFloat(mobileVolumeControl.value) || 0;
+  });
+}
 
 if (audio) {
   audio.addEventListener("pause", () => {

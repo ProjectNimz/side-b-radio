@@ -30,7 +30,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="styles.css?v=20260416p">
+  <link rel="stylesheet" href="styles.css?v=20260416u">
 </head>
 <body>
   <div class="noise"></div>
@@ -67,19 +67,53 @@
           <p id="mobilePlayerArtist" class="mobile-player-artist">Unknown Artist</p>
           <h2 id="mobilePlayerTitle" class="mobile-player-title">Waiting on track...</h2>
 
-          <div class="mobile-player-meter" aria-hidden="true">
-            <span class="mobile-player-meter-fill"></span>
-          </div>
+          <label class="mobile-player-volume" for="mobileVolumeControl">
+            <span class="sr-only">Volume</span>
+            <input
+              id="mobileVolumeControl"
+              class="mobile-player-volume-slider"
+              type="range"
+              min="0"
+              max="1"
+              step="0.01"
+              value="1"
+              aria-label="Volume control">
+          </label>
 
           <div class="mobile-player-controls">
-            <button class="mobile-player-icon" type="button" aria-label="Shuffle" disabled>⤮</button>
-            <button class="mobile-player-icon" type="button" aria-label="Previous" disabled>⏮</button>
+            <button class="mobile-player-icon" type="button" aria-label="Shuffle" disabled>
+              <span class="control-icon control-icon-shuffle" aria-hidden="true">⇄</span>
+            </button>
+            <button class="mobile-player-icon" type="button" aria-label="Previous" disabled>
+              <span class="control-icon control-icon-skip control-icon-prev" aria-hidden="true"></span>
+            </button>
             <button id="mobilePlayerToggle" class="mobile-player-toggle" type="button" aria-label="Play live stream">
               <span class="mobile-player-toggle-icon" aria-hidden="true">▶</span>
             </button>
-            <button class="mobile-player-icon" type="button" aria-label="Next" disabled>⏭</button>
-            <button class="mobile-player-icon" type="button" aria-label="Queue" disabled>☰</button>
+            <button class="mobile-player-icon" type="button" aria-label="Next" disabled>
+              <span class="control-icon control-icon-skip control-icon-next" aria-hidden="true"></span>
+            </button>
+            <button
+              id="mobileSectionNavToggle"
+              class="mobile-player-icon"
+              type="button"
+              aria-label="Open section navigation"
+              aria-expanded="false"
+              aria-controls="mobileSectionNav">
+              <span class="control-icon control-icon-queue" aria-hidden="true">
+                <span></span>
+                <span></span>
+                <span></span>
+              </span>
+            </button>
           </div>
+
+          <nav id="mobileSectionNav" class="mobile-section-nav" aria-label="Section navigation">
+            <button class="mobile-section-nav-link" type="button" data-scroll-target="recentlyPlayedSection">Recently Played</button>
+            <button class="mobile-section-nav-link" type="button" data-scroll-target="programming">Local Scene</button>
+            <button class="mobile-section-nav-link" type="button" data-scroll-target="international">International</button>
+            <button class="mobile-section-nav-link" type="button" data-scroll-target="contactSection">Contact</button>
+          </nav>
         </section>
 
         <div class="brand-bottom">
@@ -104,7 +138,7 @@
     </div>
   </header>
 
-  <section class="recent-mobile-module module panel-skin collapsible-module" aria-labelledby="recentMobileTitle" data-collapsible>
+  <section id="recentlyPlayedSection" class="recent-mobile-module module panel-skin collapsible-module" aria-labelledby="recentMobileTitle" data-collapsible>
     <div class="module-head recent-module-head">
       <span class="tape tape-orange recent-footer-label" id="recentMobileTitle">recently played</span>
       <button
@@ -177,7 +211,7 @@
 
   </main>
 
-  <footer class="footer-bar panel-skin">
+  <footer id="contactSection" class="footer-bar panel-skin">
     <div>
       <span class="footer-kicker">Side B Radio</span>
       <strong>Built for underground transmission, not polite algorithm music.</strong>
@@ -186,6 +220,6 @@
   </footer>
 
   <audio id="streamAudio" preload="none"></audio>
-  <script src="app.js?v=20260416c"></script>
+  <script src="app.js?v=20260416g"></script>
 </body>
 </html>
