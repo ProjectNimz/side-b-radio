@@ -36,6 +36,7 @@ const localSceneGrid = document.getElementById("localSceneGrid");
 const internationalSceneGrid = document.getElementById("internationalSceneGrid");
 const collapsibleModules = Array.from(document.querySelectorAll("[data-collapsible]"));
 const mobileSectionMedia = window.matchMedia("(max-width: 640px)");
+const isiOS = /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
 
 function ensureAudioSource() {
   if (!audio) return false;
@@ -340,7 +341,8 @@ function setStoppedState() {
   }
 
   if (mobilePlayToggleIcon) {
-    mobilePlayToggleIcon.textContent = "\u25B6";
+    mobilePlayToggle?.classList.remove("is-playing");
+    mobilePlayToggle?.setAttribute("aria-label", "Play live stream");
   }
 
   mobilePlayerCard?.classList.remove("is-live");
@@ -363,7 +365,8 @@ function setPlayingState() {
   }
 
   if (mobilePlayToggleIcon) {
-    mobilePlayToggleIcon.textContent = "||";
+    mobilePlayToggle?.classList.add("is-playing");
+    mobilePlayToggle?.setAttribute("aria-label", "Pause live stream");
   }
 
   mobilePlayerCard?.classList.add("is-live");
@@ -525,10 +528,18 @@ bindPlaybackControl(playToggle);
 bindPlaybackControl(mobilePlayToggle);
 
 if (audio && mobileVolumeControl) {
-  audio.volume = Number.parseFloat(mobileVolumeControl.value) || 1;
-  mobileVolumeControl.addEventListener("input", () => {
-    audio.volume = Number.parseFloat(mobileVolumeControl.value) || 0;
-  });
+  if (isiOS) {
+    document.body.classList.add("ios-volume-locked");
+    mobileVolumeControl.disabled = true;
+    mobileVolumeControl.value = "1";
+    mobileVolumeControl.setAttribute("aria-label", "Use iPhone hardware volume buttons");
+    mobileVolumeControl.title = "Use iPhone hardware volume buttons";
+  } else {
+    audio.volume = Number.parseFloat(mobileVolumeControl.value) || 1;
+    mobileVolumeControl.addEventListener("input", () => {
+      audio.volume = Number.parseFloat(mobileVolumeControl.value) || 0;
+    });
+  }
 }
 
 if (audio) {
