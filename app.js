@@ -530,10 +530,13 @@ bindPlaybackControl(mobilePlayToggle);
 if (audio && mobileVolumeControl) {
   if (isiOS) {
     document.body.classList.add("ios-volume-locked");
-    mobileVolumeControl.disabled = true;
-    mobileVolumeControl.value = "1";
-    mobileVolumeControl.setAttribute("aria-label", "Use iPhone hardware volume buttons");
-    mobileVolumeControl.title = "Use iPhone hardware volume buttons";
+    mobileVolumeControl.value = audio.muted ? "0" : "1";
+    mobileVolumeControl.setAttribute("aria-label", "Volume control (mute or use iPhone hardware buttons)");
+    mobileVolumeControl.title = "Use iPhone hardware buttons for volume. Sliding to zero mutes.";
+    mobileVolumeControl.addEventListener("input", () => {
+      const nextValue = Number.parseFloat(mobileVolumeControl.value) || 0;
+      audio.muted = nextValue <= 0.01;
+    });
   } else {
     audio.volume = Number.parseFloat(mobileVolumeControl.value) || 1;
     mobileVolumeControl.addEventListener("input", () => {
